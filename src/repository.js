@@ -103,7 +103,7 @@ var httpHandler = function (fn) {
             owner: owner,
             repo: repo
         }).then(function (repoResult) {
-            console.log(Hubkit.rateLimitRemaining);
+            console.log(Hubkit.rateLimitRemaining + " GitHub API hourly requests remaining");
             if (req.query.callback) {
                 return res.jsonp(fn(repoResult));
             } else {
