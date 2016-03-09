@@ -7,31 +7,44 @@ var gh = new Hubkit({
     token: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
 });
 
-var getEvents = function (commitsArray) {
+var getEvents = function (commitsArray, contributorEvents) {
     var commitsData = {
         contributors: {}, // { "account1": commits, "account2": commits }
         events: [],
         totalCommits: commitsArray.length
     };
 
-    var daysWithCommits = {
-        // "YYYY-MM-DD": commitCount
-    };
+    var daysWithCommits = {};
 
-    // Append contributors to the contributors object and count commits
     commitsArray.forEach(function (currentCommit) {
         // We need to identify the contributor using a variety of ways because if someone deletes
         // their GitHub account then the response won't include our required data. In that case
         // we can fall back to using their email address.
-        var commitAuthorId = (currentCommit.committer || currentCommit.author || {login: currentCommit.commit.author.email}).login;
+        var commitAuthorId = (currentCommit.author || currentCommit.committer || {login: currentCommit.commit.author.email}).login;
+
         var validAuthorCheck = commitsData.contributors[commitAuthorId];
 
-        commitsData.contributors[commitAuthorId] = validAuthorCheck !== undefined ? commitsData.contributors[commitAuthorId] + 1 : 1;
+        commitsData.contributors[commitAuthorId] = (validAuthorCheck || 0) + 1;
 
         var formattedDate = moment(currentCommit.commit.committer.date).format("YYYY-MM-DD");
         var validDateCheck = daysWithCommits[formattedDate];
 
-        daysWithCommits[formattedDate] = validDateCheck !== undefined ? daysWithCommits[formattedDate] + 1 : 1;
+        if (contributorEvents) {
+            // daysWithCommits = {
+            //   "YYYY-MM-DD": {
+            //     account1: commits,
+            //     account2: commits
+            //   }
+            // }
+            var currentDate = daysWithCommits[formattedDate] = validDateCheck || {};
+            var currentAuthorCount = currentDate[commitAuthorId];
+            currentDate[commitAuthorId] = (currentAuthorCount || 0) + 1;
+        } else {
+            // daysWithCommits = {
+            //   "YYYY-MM-DD": commits // total commits for that date
+            // }
+            daysWithCommits[formattedDate] = (validDateCheck  || 0) + 1;
+        }
     });
 
     // Populate the events array with data converted from the daysWithCommits object
@@ -40,9 +53,10 @@ var getEvents = function (commitsArray) {
         var secondDate = moment(b);
         return firstDate.isBefore(secondDate) ? 1 : -1;
     }).map(function (currentDate, index) {
+        var currentDaysData = daysWithCommits[currentDate];
         return {
             timestamp: currentDate,
-            value: daysWithCommits[currentDate]
+            value: contributorEvents ? Object.keys(currentDaysData).length : currentDaysData
         };
     });
 
@@ -50,7 +64,7 @@ var getEvents = function (commitsArray) {
 };
 
 var getContributors = function (commitsArray) {
-    var commitsData = getEvents(commitsArray);
+    var commitsData = getEvents(commitsArray, true);
     var output = {
         summary: {
             numberOfContributors: Object.keys(commitsData.contributors).length
@@ -93,6 +107,7 @@ var getCommits = function (commitsArray) {
 
     return output;
 };
+
 
 var httpHandler = function (fn) {
     return function (req, res) {
