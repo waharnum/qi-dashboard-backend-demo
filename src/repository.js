@@ -7,7 +7,7 @@ var gh = new Hubkit({
     token: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
 });
 
-var getEvents = function (commitsArray, contributorEvents) {
+function getEvents (commitsArray, contributorEvents) {
     var commitsData = {
         contributors: {}, // { "account1": commits, "account2": commits }
         events: [],
@@ -63,7 +63,7 @@ var getEvents = function (commitsArray, contributorEvents) {
     return commitsData;
 };
 
-var getContributors = function (commitsArray) {
+function getContributors (commitsArray) {
     var commitsData = getEvents(commitsArray, true);
     var output = {
         summary: {
@@ -75,31 +75,36 @@ var getContributors = function (commitsArray) {
     return output;
 };
 
-var getMostFrequentCommitter = function (commitsData) {
+function getMostFrequentCommitter (commitsData) {
     var contributors = commitsData.contributors;
     var mostFrequentCommitter = null;
-    var maxCommitsPerAuthor = 0;
+    var mostFrequentCommitterTotalCommits = 0;
+    var mostFrequentCommitterData = {};
 
     Object.keys(contributors).forEach(function (currentAuthor) {
         var count = contributors[currentAuthor];
 
-        if (count > maxCommitsPerAuthor) {
-            maxCommitsPerAuthor = count;
+        if (count > mostFrequentCommitterTotalCommits) {
+            mostFrequentCommitterTotalCommits = count;
             mostFrequentCommitter = currentAuthor;
         }
     });
 
-    return mostFrequentCommitter;
+    mostFrequentCommitterData.author = mostFrequentCommitter;
+    mostFrequentCommitterData.commits = mostFrequentCommitterTotalCommits;
+    
+    return mostFrequentCommitterData;
 };
 
-var getCommits = function (commitsArray) {
+function getCommits (commitsArray) {
     var commitsData = getEvents(commitsArray);
     var timeOfLastCommit = moment(commitsArray[0].commit.committer.date).format("YYYY-MM-DD");
-    var mostFrequentCommitter = getMostFrequentCommitter(commitsData);
+    var mostFrequentCommitterData = getMostFrequentCommitter(commitsData);
     var output = {
         summary: {
             timeOfLastCommit: timeOfLastCommit,
-            mostFrequentCommitter: mostFrequentCommitter,
+            mostFrequentCommitter: mostFrequentCommitterData.author,
+            mostFrequentCommitterTotalCommits: mostFrequentCommitterData.commits,
             totalCommits: commitsData.totalCommits
         },
         events: commitsData.events
@@ -108,8 +113,7 @@ var getCommits = function (commitsArray) {
     return output;
 };
 
-
-var httpHandler = function (fn) {
+function httpHandler (fn) {
     return function (req, res) {
         var owner = req.params.owner;
         var repo = req.params.repo;
