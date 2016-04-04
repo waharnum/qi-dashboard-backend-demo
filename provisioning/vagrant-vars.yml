@@ -1,0 +1,6 @@
+---
+nodejs_version: 4.3.1
+
+nodejs_app_install_dir: /home/vagrant/sync
+
+nodejs_app_dev_env: true

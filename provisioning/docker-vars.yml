@@ -1,0 +1,6 @@
+---
+nodejs_app_install_dir: "{{ lookup('env', 'INSTALL_DIR') }}"
+
+nodejs_app_env_vars:
+  - QI_DASHBOARD_BACKEND_TCP_PORT="{{ lookup('env', 'QI_DASHBOARD_BACKEND_TCP_PORT') }}"
+  - GITHUB_PERSONAL_ACCESS_TOKEN="{{ lookup('env', 'GITHUB_PERSONAL_ACCESS_TOKEN') }}"

@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  user: root
+
+  vars_files:
+    - vars.yml
+    - vagrant-vars.yml
+
+  pre_tasks:
+    - include_vars: secrets.yml
+      ignore_errors: yes
+      tags:
+        - always
+
+  roles:
+    - facts
+    - secrets
+    - nodejs
